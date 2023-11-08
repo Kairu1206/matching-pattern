@@ -1,13 +1,15 @@
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Your implementations of various string searching algorithms.
  *
- * @author YOUR NAME HERE
+ * @author Quang Nguyen
  * @version 1.0
- * @userid YOUR USER ID HERE (i.e. gburdell3)
- * @GTID YOUR GT ID HERE (i.e. 900000000)
+ * @userid qnguyen305
+ * @GTID 903770019
  *
  * Collaborators: LIST ALL COLLABORATORS YOU WORKED WITH HERE
  *
@@ -32,7 +34,45 @@ public class PatternMatching {
      */
     public static List<Integer> kmp(CharSequence pattern, CharSequence text,
                                     CharacterComparator comparator) {
+        if (pattern == null) {
+            throw new IllegalArgumentException("pattern is null");
+        }
+        if (pattern.length() == 0) {
+            throw new IllegalArgumentException("pattern is empty");
+        }
+        if (text == null) {
+            throw new IllegalArgumentException("text is null");
+        }
+        if (comparator == null) {
+            throw new IllegalArgumentException("comparator is null");
+        }
 
+        List<Integer> ls = new ArrayList<>();
+        int m = pattern.length();
+        int n = text.length();
+        int i = 0;
+        int j = 0;
+        if (m <= n) {
+            int[] table = buildFailureTable(pattern, comparator);
+            while (i <= n - m) {
+                while (j < m && comparator.compare(text.charAt(i + j), pattern.charAt(j)) == 0) {
+                    j++;
+                }
+                if (j == 0) {
+                    i++;
+                } else {
+                    if (j == m) {
+                        ls.add(i);
+                    }
+                    int shift = table[j - 1];
+                    i = i + (j - shift);
+                    j = shift;
+
+                }
+            }
+        }
+
+        return ls;
     }
 
     /**
@@ -60,7 +100,33 @@ public class PatternMatching {
      */
     public static int[] buildFailureTable(CharSequence pattern,
                                           CharacterComparator comparator) {
+        if (pattern == null) {
+            throw new IllegalArgumentException("pattern is null");
+        }
 
+        if (comparator == null) {
+            throw new IllegalArgumentException("comparator is null");
+        }
+        int m = pattern.length();
+        int[] table = new int[m];
+        int i = 0;
+        int j = 1;
+        table[0] = 0;
+        while (j < m) {
+            if (comparator.compare(pattern.charAt(i), pattern.charAt(j)) == 0) {
+                table[j] = i + 1;
+                i++;
+                j++;
+            } else {
+                if (i == 0) {
+                    table[j] = 0;
+                    j++;
+                } else {
+                    i = table[i - 1];
+                }
+            }
+        }
+        return table;
     }
 
     /**
@@ -84,7 +150,50 @@ public class PatternMatching {
     public static List<Integer> boyerMoore(CharSequence pattern,
                                            CharSequence text,
                                            CharacterComparator comparator) {
+        if (pattern == null) {
+            throw new IllegalArgumentException("pattern is null");
+        }
+        if (pattern.length() == 0) {
+            throw new IllegalArgumentException("pattern is empty");
+        }
+        if (text == null) {
+            throw new IllegalArgumentException("text is null");
+        }
+        if (comparator == null) {
+            throw new IllegalArgumentException("comparator is null");
+        }
+        List<Integer> ls = new ArrayList<>();
 
+        int m = pattern.length();
+        int n = text.length();
+        int i = 0;
+        if (m <= n) {
+            Map<Character, Integer> map = buildLastTable(pattern);
+            while (i <= n - m) {
+                int j = m - 1;
+                while (j >= 0 && comparator.compare(text.charAt(i + j), pattern.charAt(j)) == 0) {
+                    j--;
+                }
+                if (j == -1) {
+                    ls.add(i);
+                    i++;
+                } else {
+                    int shift = 0;
+                    if (map.get(text.charAt(i + j)) != null) {
+                        shift =  map.get(text.charAt(i + j));
+                    } else {
+                        shift = -1;
+                    }
+                    if (shift < j) {
+                        i = i + (j - shift);
+                    } else {
+                        i++;
+                    }
+                }
+            }
+        }
+
+        return ls;
     }
 
     /**
@@ -114,7 +223,18 @@ public class PatternMatching {
      * @throws java.lang.IllegalArgumentException if the pattern is null
      */
     public static Map<Character, Integer> buildLastTable(CharSequence pattern) {
-
+        if (pattern == null) {
+            throw  new IllegalArgumentException("pattern is null");
+        }
+        Map<Character, Integer> map = new HashMap<>();
+        for (int i = 0; i < pattern.length(); i++) {
+            if (!map.containsKey(pattern.charAt(i))) {
+                map.put(pattern.charAt(i), i);
+            } else if (map.containsKey(pattern.charAt(i))) {
+                map.put(pattern.charAt(i), i);
+            }
+        }
+        return map;
     }
 
     /**
@@ -184,7 +304,49 @@ public class PatternMatching {
     public static List<Integer> rabinKarp(CharSequence pattern,
                                           CharSequence text,
                                           CharacterComparator comparator) {
-
+        if (pattern == null) {
+            throw new IllegalArgumentException("pattern is null");
+        }
+        if (pattern.length() == 0) {
+            throw new IllegalArgumentException("pattern is empty");
+        }
+        if (text == null) {
+            throw new IllegalArgumentException("text is null");
+        }
+        if (comparator == null) {
+            throw new IllegalArgumentException("comparator is null");
+        }
+        int m = pattern.length();
+        int n = text.length();
+        int patternHash = 0;
+        int textHash = 0;
+        int times = 1;
+        List<Integer> ls = new ArrayList<>();
+        if (m <= n) {
+            for (int i = m - 1; i >= 0; i--) {
+                patternHash += pattern.charAt(i) * times;
+                textHash += text.charAt(i) * times;
+                if (i != 0) {
+                    times *= BASE;
+                }
+            }
+            for (int i = 0; i <= n - m; i++) {
+                if (textHash == patternHash) {
+                    for (int j = 0; j < m; j++) {
+                        int condCheck = comparator.compare(text.charAt(i + j), pattern.charAt(j));
+                        if (condCheck == 0 && j == pattern.length() - 1) {
+                            ls.add(i);
+                        } else if (condCheck != 0) {
+                            j = m;
+                        }
+                    }
+                }
+                if (i < n - m) {
+                    textHash = (textHash - (text.charAt(i) * times)) * BASE + text.charAt(i + m);
+                }
+            }
+        }
+        return ls;
     }
 
     /**
@@ -207,6 +369,53 @@ public class PatternMatching {
     public static List<Integer> boyerMooreGalilRule(CharSequence pattern,
                                           CharSequence text,
                                           CharacterComparator comparator) {
-        return null; // if you are not implementing this method, do NOT modify this line
+        if (pattern == null) {
+            throw new IllegalArgumentException("pattern is null");
+        }
+        if (pattern.length() == 0) {
+            throw new IllegalArgumentException("pattern is empty");
+        }
+        if (text == null) {
+            throw new IllegalArgumentException("text is null");
+        }
+        if (comparator == null) {
+            throw new IllegalArgumentException("comparator is null");
+        }
+        List<Integer> ls = new ArrayList<>();
+        int m = pattern.length();
+        int n = text.length();
+        int i = 0;
+        int w = 0;
+        if (m <= n) {
+            int[] table = buildFailureTable(pattern, comparator);
+            Map<Character, Integer> map = buildLastTable(pattern);
+            int k = m - table[m - 1];
+            while (i <= n - m) {
+                int j = m - 1;
+                while (j >= w && comparator.compare(text.charAt(i + j), pattern.charAt(j)) == 0) {
+                    j--;
+                }
+                if (j < w) {
+                    ls.add(i);
+                    i += k;
+                    w = m - k;
+                } else {
+                    int shift = 0;
+                    if (map.get(text.charAt(i + j)) != null) {
+                        shift =  map.get(text.charAt(i + j));
+                    } else {
+                        shift = -1;
+                    }
+                    if (shift < j) {
+                        i = i + (j - shift);
+                    } else {
+                        i++;
+                    }
+                    w = 0;
+                }
+            }
+
+        }
+        return ls; // if you are not implementing this method, do NOT modify this line
     }
 }
